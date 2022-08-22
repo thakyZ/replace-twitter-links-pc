@@ -2,34 +2,31 @@ const { Plugin } = require("powercord/entities");
 const { inject, uninject } = require("powercord/injector");
 const { messages } = require("powercord/webpack");
 
-let prefix;
-module.exports = class timestamp extends Plugin {
+module.exports = class ReplaceTwitterLinks extends Plugin {
   startPlugin() {
-    prefix = "\\.twitfix=";
-    this.patchMessage();
-  }
-  patchMessage() {
-    //Lighty made this better because he felt like it
-    inject(
-      "twitfix-link",
-      messages,
-      "sendMessage",
-      (args) => {
-        const regexAGlobal = new RegExp(
-          `${prefix}(https:\/\/)(twitter.com\/.*)`,
-          "gi"
-        );
-        if (args[1].content.search(regexAGlobal) !== -1) {
-          args[1].content = args[1].content.replace(regexAGlobal, "$1vx$2");
+    powercord.api.commands.registerCommand({
+      command: "twitfix",
+      description:
+        "Replaces Twitter links to open in the app for other users without Powercord.",
+      usage: "{c} <url>",
+      executor: (args) => {
+        const regexAGlobal =
+          /(https:\/\/)(twitter.com\/([\w_\-\d]+)\/?(status)?\/?(\d+)?)(((\?|&)(s|t)=([\w\d]+|\d+))+)?/gi;
+        if (args[0].search(regexAGlobal) !== -1) {
+          return {
+            send: true,
+            result: `${args[0].replace(regexAGlobal, "$1vx$2")}`,
+          };
+        } else {
+          return {
+            send: false,
+            result: `Invalid Twitter link: ${args[0]}`,
+          };
         }
-        return args;
       },
-      true
-    );
+    });
   }
   pluginWillUnload() {
-    uninject("twitfix-link");
-    powercord.api.settings.unregisterSettings(this.entityID);
-    powercord.api.settings.unregisterSettings(this.entityID);
+    powercord.api.commands.unregisterCommand("twitfix");
   }
 };
